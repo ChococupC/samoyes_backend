@@ -3,11 +3,11 @@ import platform
 from pathlib import Path
 from typing import List
 
-from dotenv import find_dotenv, load_dotenv
+# from dotenv import find_dotenv, load_dotenv
 
 # 导入 env
-dotenv_path = find_dotenv(".env")
-load_dotenv(dotenv_path=dotenv_path, override=True)
+# dotenv_path = find_dotenv(".env")
+# load_dotenv(dotenv_path=dotenv_path, override=True)
 
 # 路由应用
 ROUTE_APPS: List[str] = [
