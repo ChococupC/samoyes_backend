@@ -1,6 +1,7 @@
 __pycache__/
 .env
 fast_api.zip
+fast_api
 game.py
 srt.py
 test.py
