@@ -20,7 +20,7 @@ EXCEPT_APPS: List[str] = [
 PROJECT_PATH = Path(__file__).parents[1]  # 项目地址
 
 # 导入来源
-SOURCE_PATH = Path(os.getenv("SOURCE_PATH"))
+SOURCE_PATH = Path(os.getenv("SOURCE_PATH") or (PROJECT_PATH / "source"))
 SOURCE_PATH.mkdir(parents=True, exist_ok=True)
 
 # 添加日志进入环境变量
@@ -30,6 +30,6 @@ os.environ["LOG_DIR_PATH"] = LOG_DIR_PATH.__str__()
 SYSTEM = platform.system()
 
 # 项目名称
-PROJECT_NAME = os.getenv("PROJECT_NAME")  # 项目名称
+PROJECT_NAME = os.getenv("PROJECT_NAME", "Samoyes")  # 项目名称
 # 接口前缀
-API_PREFIX = os.getenv("API_PREFIX")  # 项目api前缀
+API_PREFIX = os.getenv("API_PREFIX", "/samoyes_API")  # 项目api前缀
