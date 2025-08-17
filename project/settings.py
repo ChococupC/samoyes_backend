@@ -7,8 +7,8 @@ from dotenv import find_dotenv, load_dotenv
 
 # 导入 env
 dotenv_path = find_dotenv(".env")
-if not dotenv_path:
-    raise EnvironmentError("Unable to find the environment.")
+# if not dotenv_path:
+#     raise EnvironmentError("Unable to find the environment.")
 load_dotenv(dotenv_path=dotenv_path, override=True)
 
 # 路由应用
@@ -36,9 +36,9 @@ PROJECT_NAME = os.getenv("PROJECT_NAME", "Samoyes")  # 项目名称
 # 接口前缀
 API_PREFIX = os.getenv("API_PREFIX", "/samoyes_API")  # 项目api前缀
 # 数据库接口
-USER = os.getenv("USER")
-PASSWORD = os.getenv("PASSWORD")
-HOST = os.getenv("HOST")
-PORT = os.getenv("PORT")
-DATABASE = os.getenv("DATABASE")
+USER = os.getenv("USER", None)
+PASSWORD = os.getenv("PASSWORD", None)
+HOST = os.getenv("HOST", None)
+PORT = os.getenv("PORT", None)
+DATABASE = os.getenv("DATABASE", None)
 CONNECT = f"{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}"
