@@ -3,9 +3,13 @@ from contextlib import contextmanager, asynccontextmanager
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker, scoped_session, Session
 from sqlalchemy import create_engine
+from project.settings import CONNECT
+
+if not CONNECT:
+    raise EnvironmentError("Connection between database is not build, please check your env.")
 
 engine = create_engine(
-    'mysql://root:123456@localhost:3306/samoyes',
+    f'mysql://{CONNECT}',
     pool_size=10,
     max_overflow=20,
     pool_timeout=30,
