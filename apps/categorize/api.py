@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 import random
 from datetime import timedelta, datetime
 from apps.categorize.models import CategorizeDaily, Word, Category
+from apps.categorize.schemas import CategorizeInput
 from utils.Sqlalchemy.connect import transactional
 from utils.fastapi_utils.debug.debug import DebugManager
 from utils.pydantic_utils.response import SuccessResponseModel, ErrorResponseModel
@@ -9,7 +10,8 @@ from utils.pydantic_utils.response import SuccessResponseModel, ErrorResponseMod
 router = APIRouter(tags=["categorize"], prefix="/categorize")
 
 @router.get("/")
-async def categorize_get(debugger: DebugManager = Depends()):
+async def categorize_get(param: CategorizeInput = Depends(),
+                         debugger: DebugManager = Depends()):
     """
         Grab words for the day
         :return: date, categories, words, puzzle_words
@@ -17,7 +19,7 @@ async def categorize_get(debugger: DebugManager = Depends()):
     debugger.enabled = False
 
     # Get category for today
-    dt = datetime.now().date()
+    dt = param.date
     words = CategorizeDaily.get_instances_all(error=False, debugger=debugger, o="category", date=dt)
 
     if not words:
