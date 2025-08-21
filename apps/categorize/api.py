@@ -53,7 +53,7 @@ async def categorize_get(param: CategorizeInput = Depends(),
     })
 
 @router.get("/create/")
-async def categorize_word(debugger: DebugManager = Depends()):
+def categorize_word(debugger: DebugManager = Depends()):
     """
     Create new combination of categories for this week.
     1) check if code runs at the correct date
@@ -125,6 +125,8 @@ async def categorize_word(debugger: DebugManager = Depends()):
             raise ValueError(f"Group Return Only have {len(groups_return)}")
         return groups_return
 
+
+
     # 1. Check if code runs at a correct date
     dt = datetime.now().date()
 
@@ -176,3 +178,11 @@ async def categorize_word(debugger: DebugManager = Depends()):
 
     return SuccessResponseModel(message="categorize_word complete")
 
+def cmd_categorize(debugger: DebugManager = Depends()):
+    for i in range(0,5):
+        result = categorize_word(debugger=debugger)
+        if result.code:
+            print(result.message)
+            return
+    print("failed")
+    return
