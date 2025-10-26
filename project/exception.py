@@ -5,7 +5,7 @@ from project.app import app
 
 
 @app.exception_handler(Exception)
-async def exception_handler(request, exc):
+def exception_handler(request, exc):
     return JSONResponse(
         content=jsonable_encoder({"message": str(exc)}),
     )

@@ -20,6 +20,9 @@ async def categorize_get(param: CategorizeInput = Depends(),
 
     # Get category for today
     dt = param.date
+    if not dt:
+        return ErrorResponseModel(message="No date provided")
+
     words = CategorizeDaily.get_instances_all(error=False, debugger=debugger, o="category", date=dt)
 
     if not words:
@@ -76,14 +79,13 @@ def categorize_word(debugger: DebugManager = Depends()):
             [4, 5, 6, 5, 6, 4],     #4
             [4, 4, 5, 5, 5, 7],     #3
             [5, 5, 4, 5, 8, 3],     #2
-            [5, 5, 6, 8, 4, 0],     #1
+            [5, 5, 6, 8, 4, 2],     #1
         ]
         month_weight = abs(month - 9)
         result = weights[month_weight]
 
         if debugger.enabled:
             debugger.add(
-                model="No Model",
                 method="GetWeight",
                 month = month_weight,
                 weight = result
@@ -92,57 +94,92 @@ def categorize_word(debugger: DebugManager = Depends()):
         return result
 
     def group_categorize(categories):
-        words_group = []
-        repeated_category_words = []
+        """
+        Groups 30 categories (each with 4 random words) into 7 groups of 16 words.
+        Ensures no duplicate words within each group.
+        28 categories are used (7 groups × 4 categories), 2 serve as buffer for deferrals.
+        """
+        current_group = []
+        deferred_categories = []
         groups_return = []
+        seen_words_in_group = set()
 
         for category in categories:
+            # Get 4 random words from this category
             word_inst = Word.objects().filter(category=category.id).all()
             randomized_category_words = random.sample(word_inst, 4)
-            words_group.extend(randomized_category_words)
-            len_words_group = len(words_group)
-            if len_words_group != len(set(words_group)):
-                repeated_category_words.extend(randomized_category_words)
-                words_group.reverse()
 
-            elif len_words_group == 16:
-                groups_return.append(words_group)
-                words_group = repeated_category_words
-                repeated_category_words = []
+            # Check if any word already exists in current group
+            word_names = [word.name for word in randomized_category_words]
+            has_duplicate = any(name in seen_words_in_group for name in word_names)
 
+            if has_duplicate:
+                # Defer this category for later use
+                deferred_categories.append(randomized_category_words)
+            else:
+                # Add to current group
+                current_group.extend(randomized_category_words)
+                seen_words_in_group.update(word_names)
+
+                # Check if current group is complete (16 words = 4 categories × 4 words)
+                if len(current_group) == 16:
+                    groups_return.append(current_group)
+                    current_group = []
+                    seen_words_in_group = set()
+
+                    # Try to use deferred categories for next group
+                    for deferred_words in deferred_categories[:]:
+                        deferred_names = [word.name for word in deferred_words]
+                        if not any(name in seen_words_in_group for name in deferred_names):
+                            current_group.extend(deferred_words)
+                            seen_words_in_group.update(deferred_names)
+                            deferred_categories.remove(deferred_words)
+
+                            if len(current_group) == 16:
+                                groups_return.append(current_group)
+                                current_group = []
+                                seen_words_in_group = set()
+                                break
+
+        # Debug logging
         if debugger.enabled:
             debugger.add(
-                model="No Model",
-                method = "GroupCategorize",
-                status = bool(len(groups_return) == 7),
-                groups_return = groups_return
+                method="GroupCategorize",
+                status=len(groups_return) == 7,
+                groups_return=[[w.name for w in g ] for g in groups_return],
+                deferred_count=len(deferred_categories),
+                group_sizes=[len(g) for g in groups_return]
             )
 
+        # Validation
         if len(groups_return) != 7:
             if debugger.enabled:
                 debugger.display()
+            raise ValueError(
+                f"Expected 7 groups, got {len(groups_return)}. "
+                f"Deferred categories: {len(deferred_categories)}"
+            )
 
-            raise ValueError(f"Group Return Only have {len(groups_return)}")
         return groups_return
-
-
 
     # 1. Check if code runs at a correct date
     dt = datetime.now().date()
 
-    latest_inst = CategorizeDaily.get_latest_instance(debugger=debugger)
-    if latest_inst.date > dt:
+    if not debugger.enabled:
+        latest_inst = CategorizeDaily.get_latest_instance(debugger=debugger)
+        if latest_inst.date > dt:
 
-        if debugger.enabled:
-            debugger.display()
+            if debugger.enabled:
+                debugger.display()
 
-        return ErrorResponseModel(message=f"Operate too early, please wait till {latest_inst.date}")
+            return ErrorResponseModel(message=f"Operate too early, please wait till {latest_inst.date}")
 
     # 2. Get weight for each unit
     weight = get_weight(dt.month)
-    randomized_categories = []
 
     # 3. Get Random Categories By Unit
+    randomized_categories = []
+
     for i in range(0,6):
         k = weight[i]
         category_inst = Category.get_instances_all(debugger=debugger, unit=i)
@@ -155,6 +192,12 @@ def categorize_word(debugger: DebugManager = Depends()):
     groups = group_categorize(randomized_categories)
 
     # 5. Store words in CategorizeDaily
+    if debugger.enabled:
+        debugger.add(model=CategorizeDaily, method="categorize_word")
+        debugger.display()
+
+        return SuccessResponseModel(message="categorize_word complete")
+
     with transactional() as db:
         for group in groups:
             dt += timedelta(days=1)
@@ -173,16 +216,5 @@ def categorize_word(debugger: DebugManager = Depends()):
                     name=word.name
                 )
 
-    if debugger.enabled:
-        debugger.display()
-
     return SuccessResponseModel(message="categorize_word complete")
 
-def cmd_categorize(debugger: DebugManager = Depends()):
-    for i in range(0,5):
-        result = categorize_word(debugger=debugger)
-        if result.code:
-            print(result.message)
-            return
-    print("failed")
-    return

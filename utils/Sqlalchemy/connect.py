@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker, scoped_session, Session
 from sqlalchemy import create_engine
 from project.settings import CONNECT
+# CONNECT format: "USER:PASSWORD@HOST:PORT/DATABASE"
 
 if not CONNECT:
     raise EnvironmentError("Connection between database is not build, please check your env.")
@@ -40,7 +41,6 @@ def transactional(session: Session = None):
         # 判断是否已经在一个事务中
         if session.in_transaction():
             # 如果已经在事务中，直接使用，不再开启新事务
-            print("yield")
             yield session
         else:
             # 如果没有开启事务，则开启事务

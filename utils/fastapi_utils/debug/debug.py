@@ -2,14 +2,14 @@ import textwrap
 
 
 class DebugModel:
-    def __init__(self, model = None, method:str = "UnknownMethod", status=True, **kwargs):
+    def __init__(self, model:str = "UnknownModel", method:str = "UnknownMethod", status:bool=True, **kwargs):
         self.model = model
         self.method = method
         self.status = status
         self.detail = self.detail_create(**kwargs)
 
-
-    def detail_create(self, **kwargs):
+    @staticmethod
+    def detail_create(**kwargs):
         lines = []
         for k, v in kwargs.items():
             lines.append(f"\t--{k}--:")
@@ -23,9 +23,8 @@ class DebugManager:
         self.enabled = True
         self.records = []
 
-    def add(self, model=None, method:str="", status=True, **kwargs):
-        if not model:
-            raise ValueError("Model need to be added")
+    def add(self, model=None, method:str="", status:bool=True, **kwargs):
+        model = getattr(model,"__tablename__","Unknown Model")
         if self.enabled:
             debug_obj = DebugModel(model=model,method=method,status=status,**kwargs)
             self.records.append(debug_obj)
