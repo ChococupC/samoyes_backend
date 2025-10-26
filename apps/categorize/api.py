@@ -56,7 +56,7 @@ async def categorize_get(param: CategorizeInput = Depends(),
     })
 
 @router.get("/create/")
-def categorize_word(debugger: DebugManager = Depends()):
+def categorize_create(debugger: DebugManager = Depends()):
     """
     Create new combination of categories for this week.
     1) check if code runs at the correct date
